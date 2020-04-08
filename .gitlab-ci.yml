@@ -1,20 +1,29 @@
-image: node:latest
+# Using the node alpine image to build the React app
+image: node:alpine
 
-# This folder is cached between builds
-# http://docs.gitlab.com/ce/ci/yaml/README.html#cache
+# Announce the URL as per CRA docs
+variables:
+  PUBLIC_URL: /
+
+# Cache node modules - speeds up future builds
 cache:
   paths:
-    - node_modules/
-    # Enables git-lab CI caching. Both .cache and public must be cached, otherwise builds will fail.
-    - .cache/
-    - public/
+  - node_modules
+
+# Name the stages involved in the pipeline
+stages:
+- deploy
 
 pages:
+  stage: deploy
   script:
-    - npm install
-    - ./node_modules/.bin/gatsby build --prefix-paths
+    - npm install # Install all dependencies
+    - npm run build --prod # Build for prod
+    - cp public/index.html public/404.html 
+    - mv public _public # CRA and gitlab pages both use the public folder. Only do this in a build pipeline.
+    - mv build public # Move build files to public dir for Gitlab Pages
   artifacts:
     paths:
-      - public
+    - public # The built files for Gitlab Pages to serve
   only:
-    - master
+    - master # Only run on master branch
